@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的全能实验室 2.0</title>
+    <style>
+        /* 全局美化 */
+        :root {
+            --primary: #4facfe;
+            --bg: #f5f7fa;
+            --card: rgba(255, 255, 255, 0.9);
+        }
+        body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 20px; transition: 0.5s; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; max-width: 1200px; margin: 0 auto; }
+        .card { background: var(--card); padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: 0.3s; }
+        .card:hover { transform: translateY(-5px); }
+        h3 { margin-top: 0; color: var(--primary); font-size: 0.9rem; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        button { background: var(--primary); border: none; color: white; padding: 8px 15px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 10px; }
+        #weatherDisplay { margin-top: 10px; font-size: 0.9rem; line-height: 1.4; color: #555; }
+        
+        /* 夜间模式 */
+        body.dark { background: #1a1a2e; color: white; }
+        body.dark .card { background: #16213e; color: white; border: 1px solid #0f3460; }
+    </style>
+</head>
+<body>
+
+    <h1 id="mainTitle" style="text-align:center;">我的交互实验室 🧪</h1>
+
+    <div class="grid">
+        <div class="card"><h3>1. 随机变色</h3><button id="colorBtn">变换标题颜色</button></div>
+        <div class="card"><h3>2. 欢迎语</h3><input type="text" id="nameInput" placeholder="输入名字..." style="width:90%"><p id="greetText">你好！</p></div>
+        <div class="card"><h3>3. 主题切换</h3><button id="themeBtn">深色/浅色模式</button></div>
+        <div class="card"><h3>4. 计数器</h3><div style="text-align:center;"><button id="minus" style="width:30%">-</button> <span id="count">0</span> <button id="plus" style="width:30%">+</button></div></div>
+        
+        <div class="card">
+            <h3>5. 实时天气 (Fetch API)</h3>
+            <p id="weatherDisplay">等待查询...</p>
+            <button id="getWeather">点击抓取真实天气数据</button>
+        </div>
+    </div>
+
+    <script>
+        // 辅助函数
+        const $ = (id) => document.getElementById(id);
+
+        // 1. 变色
+        $('colorBtn').onclick = () => {
+            $('mainTitle').style.color = `hsl(${Math.random()*360}, 70%, 50%)`;
+        };
+
+        // 2. 欢迎语
+        $('nameInput').oninput = (e) => {
+            $('greetText').innerText = e.target.value ? `你好，${e.target.value}！` : "你好！";
+        };
+
+        // 3. 主题
+        $('themeBtn').onclick = () => document.body.classList.toggle('dark');
+
+        // 4. 计数器
+        let num = 0;
+        $('plus').onclick = () => $('count').innerText = ++num;
+        $('minus').onclick = () => $('count').innerText = --num;
+
+        // 5. 【核心】天气 API 逻辑
+        $('getWeather').onclick = function() {
+            const display = $('weatherDisplay');
+            display.innerText = "🛰️ 正在连接气象卫星...";
+
+            // 使用 fetch 从外部服务器获取数据
+            fetch('https://wttr.in/?format=j1')
+                .then(res => res.json()) // 将返回的数据转为 JSON 格式
+                .then(data => {
+                    const current = data.current_condition[0];
+                    const area = data.nearest_area[0];
+                    
+                    const temp = current.temp_C; // 摄氏度
+                    const desc = current.lang_zh ? current.lang_zh[0].value : current.weatherDesc[0].value; // 天气描述
+                    const city = area.region[0].value; // 地区
+
+                    // 更新 UI
+                    display.innerHTML = `
+                        <b>城市：</b> ${city}<br>
+                        <b>温度：</b> ${temp}°C<br>
+                        <b>状况：</b> ${desc}
+                    `;
+                    
+                    // 额外逻辑：根据温度改变标题颜色
+                    if (parseInt(temp) > 25) {
+                        $('mainTitle').style.color = 'orange';
+                    } else {
+                        $('mainTitle').style.color = 'skyblue';
+                    }
+                })
+                .catch(err => {
+                    display.innerText = "❌ 获取失败，请检查网络或稍后再试。";
+                    console.error(err);
+                });
+        };
+    </script>
+</body>
+</html>
